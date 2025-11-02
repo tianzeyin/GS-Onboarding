@@ -2,9 +2,12 @@ from collections.abc import Callable
 from typing import Any
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-
+from starlette.exceptions import HTTPException
+from loguru import logger
+from time import perf_counter
 
 class LoggerMiddleware(BaseHTTPMiddleware):
+
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Any]
     ) -> Response:
@@ -17,6 +20,24 @@ class LoggerMiddleware(BaseHTTPMiddleware):
         :param call_next: Endpoint or next middleware to be called (if any, this is the next middleware in the chain of middlewares, it is supplied by FastAPI)
         :return: Response from endpoint
         """
-        # TODO:(Member) Finish implementing this method
-        response = await call_next(request)
-        return response
+        start_time = perf_counter()      
+        logger.info(f"{request.method} {request.url.path}")
+
+        try:
+            response: Response = await call_next(request)
+
+            process_time = (perf_counter() - start_time) * 1000
+            logger.info(
+                f"{request.method} {request.url.path} "
+                f"{response.status_code} in {process_time:.2f}ms"
+            )
+
+            return response
+        except Exception as e:
+            # Log unexpected errors
+            process_time = (perf_counter() - start_time) * 1000
+            logger.error(
+                f"{request.method} {request.url.path} "
+                f"ERROR in {process_time:.2f}ms: {str(e)}"
+            )
+            raise
