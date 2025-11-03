@@ -40,4 +40,3 @@ class LoggerMiddleware(BaseHTTPMiddleware):
                 f"{request.method} {request.url.path} "
                 f"ERROR in {process_time:.2f}ms: {str(e)}"
             )
-            raise
